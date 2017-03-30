@@ -7,7 +7,7 @@
 *******************************************************************************/
 options ls=132 ps=8000 nonumber nodate noxwait noxsync nocenter nosource;
 /********** ÉÇÉWÉÖÅ[ÉãÇÃstoreêÊ **********/
-libname ModDir ".\MODULE";
+libname ModDir "C:\Users\biostat\Documents\MHMMÅQPaper\Program\module";
 
 proc iml;
 /********** ÉfÅ[É^Ç…ëŒÇµpoisson distributionÇ…äÓÇ√Ç´ämó¶ÇåvéZÇ∑ÇÈÉÇÉWÉÖÅ[Éã **********/
@@ -33,6 +33,7 @@ do I=1 to NR;
     free X2;
 end;
 /*RES=X||RES;*/
+/*print RES;*/
 return(RES);
 
 finish calc_res;
@@ -81,8 +82,8 @@ finish tran_m_inv;
 
 /********** Log-likelihood **********/
 start mllk_s(_x) global(pvt,x,m,c);
+_flg=0;
     run tran_m_inv(pvt,lambda,gamma,delta,beta,sigma);
-
     _R=PDF ('NORMAL', _x, 0, sigma);/*ÉâÉìÉ_ÉÄå¯â */
     allprobs=calc_res(lambda,beta,_x);
     *print allprobs;
@@ -92,7 +93,7 @@ start mllk_s(_x) global(pvt,x,m,c);
     sumfoo=foo[,+];
     if sumfoo=0 then do;
         sumfoo=1;*divided by 0 ñhé~;
-        print "warn"||"ing : replacing sumfoo by 1 because sumfoo equals 0";
+        print "w a r n i n g : replacing sumfoo by 1 because sumfoo equals 0";
         foo=foo+1/m;
     end;
     lscale=log_(sumfoo);
@@ -102,9 +103,8 @@ start mllk_s(_x) global(pvt,x,m,c);
         foo= foo*gamma#allprobs[_I,];
         sumfoo=foo[,+];
     if sumfoo=0 then do;
-        /*if sumfoo=0 then sumfoo=1;divided by 0 ñhé~*/
-        sumfoo=1;*divided by 0 ñhé~;
-        print "warn"||"ing : replacing sumfoo by 1 because sumfoo equals 0";
+        sumfoo=1;
+        print "w a r n i n g : replacing sumfoo by 1 because sumfoo equals 0";
         foo=foo+1/m;
     end;
         lscale=lscale+log_(sumfoo);
@@ -112,11 +112,12 @@ start mllk_s(_x) global(pvt,x,m,c);
         lalpha2=log_(foo)+lscale;
         lalpha=lalpha//lalpha2;
     end;
-    
     lalpha=t(lalpha);
     _c=max(lalpha[,n]);
-    llk=_c+log_(sum(exp(lalpha[,n]-_c))) + log_(_R);
+    llk=log_(exp(_c+log_(sum(exp(lalpha[,n]-_c)))) * _R);
+
     return(llk);
+	skip:
 finish mllk_s;
 
 start mllk(_pvt) global(pvt,m,c,x,nsbj,obs);
@@ -144,6 +145,7 @@ do _nsbj=1 to nsbj;
 /*    print RES;*/
 end;
 zz=RES[,+];
+/*print zz;*/
 return(zz);
 finish mllk;
 
@@ -214,7 +216,7 @@ start bootstrap(bootiter,rv) global(x,pv,opt,cons);
         seed=112345-k_;
 
         run generate_sample(107,3,rv,x,seed);
-        CALL NLPNRA(rc, result, "mllk", rv, opt,cons);
+        CALL NLPDD(rc, result, "mllk", rv, opt,cons);
 
         result_dm=result_dm//result;
     end;
