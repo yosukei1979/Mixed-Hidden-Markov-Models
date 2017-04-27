@@ -10,6 +10,11 @@ options ls=132 ps=8000 nonumber nodate noxwait noxsync nocenter nosource;
 libname ModDir "C:\Users\biostat\Documents\MHMM＿Paper\Program\module";
 
 proc iml;
+
+start logistic(x);
+res=1/(1+EXP(-x));
+return(res);
+finish;
 /********** データに対しpoisson distributionに基づき確率を計算するモジュール **********/
 Start calc_res(lambda,beta,_R) global(X,c);
 NR=NROW(X);
@@ -58,6 +63,7 @@ end;
 return(mvect);
 finish tran_m;
 /********** 行ベクトルからλ、Γ,βを再構成するモジュール **********/
+/*20170426修正：Γ、deltaにlogit変換・足して1になる変数は導出等してconsを指定しないで済むように変更*/
 start tran_m_inv(rv,lambda,gamma,delta,beta,sigma) global(m,c);/*rv:行ベクトル*/
 lambda=j(1,m,0);
 gamma=j(m,m,0);
@@ -65,18 +71,36 @@ delta=j(1,m,0);
 beta=j(1,c,0);
 sigma=j(1,1,0);
 
+*一般化するの大変なのでm=2の場合に固定、ベタ書き対応;
 do i=1 to m;
-    do j=1 to m;
-    gamma[i,j]=rv[,(m*i+j)];/*gamma*/
-    end;
-    lambda[,i]=rv[,i];/*lambda*/
+/*    do j=1 to m;*/
+/*    */
+/*    if j=1 then*/
+/*    gamma[i,j]=rv[,(m*i+j**1)];*/
+/*    else gamma[i,j]=rv[,(m*i+j**1)];*/
+/*    end;*/
+    lambda[,i]=rv[,i];
     delta[,i]=rv[,(m*(m+1)+i)];
 end;
-do _k=(m + m*m + m)+1 to (m+m*m+m)+c;
-beta[,_k-(m + m*m + m)]=rv[,_k];
+
+gamma11=logistic(rv[,3]);
+gamma12=1-gamma11;
+gamma22=logistic(rv[,4]);
+gamma21=1-gamma22;
+
+gamma[1,1]=gamma11;
+gamma[1,2]=gamma12;
+gamma[2,1]=gamma21;
+gamma[2,2]=gamma22;
+delta1=logistic(rv[,5]);
+delta2=1-delta1;
+delta[,1]=delta1;
+delta[,2]=delta2;
+do _k=6 to 7;
+beta[,_k-5]=rv[,_k];
 end;
 
-sigma[1,1]=rv[,(m+m*m+m)+c+1];
+sigma[1,1]=rv[,8];
 
 finish tran_m_inv;
 
@@ -84,7 +108,7 @@ finish tran_m_inv;
 start mllk_s(_x) global(pvt,x,m,c);
 _flg=0;
     run tran_m_inv(pvt,lambda,gamma,delta,beta,sigma);
-    _R=PDF ('NORMAL', _x, 0, sigma);/*ランダム効果*/
+    _R=PDF ('NORMAL', _x, 0, exp(sigma*2));/*ランダム効果*/
     allprobs=calc_res(lambda,beta,_x);
     *print allprobs;
     n=NROW(allprobs);/*出力系列の数*/
@@ -93,7 +117,7 @@ _flg=0;
     sumfoo=foo[,+];
     if sumfoo=0 then do;
         sumfoo=1;*divided by 0 防止;
-        print "w a r n i n g : replacing sumfoo by 1 because sumfoo equals 0";
+/*        print "w a r n i n g : replacing sumfoo by 1 because sumfoo equals 0";*/
         foo=foo+1/m;
     end;
     lscale=log_(sumfoo);
@@ -104,7 +128,7 @@ _flg=0;
         sumfoo=foo[,+];
     if sumfoo=0 then do;
         sumfoo=1;
-        print "w a r n i n g : replacing sumfoo by 1 because sumfoo equals 0";
+/*        print "w a r n i n g : replacing sumfoo by 1 because sumfoo equals 0";*/
         foo=foo+1/m;
     end;
         lscale=lscale+log_(sumfoo);
@@ -114,9 +138,10 @@ _flg=0;
     end;
     lalpha=t(lalpha);
     _c=max(lalpha[,n]);
-    llk=log_(exp(_c+log_(sum(exp(lalpha[,n]-_c)))) * _R);
-
-    return(llk);
+/*    llk=log_(exp(_c+log_(sum(exp(lalpha[,n]-_c))))) +log_(_R);*/
+    llk=_c+log_(sum(exp(lalpha[,n]-_c)));
+	llk2=exp(llk)*_R;
+    return(llk2);
 	skip:
 finish mllk_s;
 
@@ -132,101 +157,30 @@ do _nsbj=1 to nsbj;
 /*    print x;*/
 /*X=x_all[(_nsbj*obs-9):(_nsbj*obs),];*/
     
-    _integ=j(1,21,0);
-    do _in=-1 to 1 by 0.1;
-    if _in=-1 then _in2=1;
-    else _in2=_in2+1;
-        _integ[1,_in2]=mllk_S(_in)*0.1;
+    _integ=j(1,41,0);
+	_in2=0;
+    do _in=-2 to 2 by 0.1;
+	    _in2=_in2+1;
+	    _integ[1,_in2]=mllk_S(_in);
     end;
-    z=_integ[,+];
-    *call quad(z,"mllk_S",rang);
+	z=_integ[,+];
+/*	print _integ;*/
+/*	RANG={-1 1};*/
+/*call quad(z,"mllk_S",rang);*/
+/*logsum ver*/
+/*	_cz=max(_integ);*/
+/*	_z2=_cz+log_(sum(exp(_integ-_cz)));*/
+/*	z=_z2+log(4)-log(41);*/
 
     RES[1,_nsbj]=z;
 /*    print RES;*/
 end;
 zz=RES[,+];
+const=10*log(4/41);
+lzz=log_(zz)+const;
 /*print zz;*/
-return(zz);
+return(lzz);
 finish mllk;
-
-
-/*******************************************************************************
-    parametric bootstrapによる信頼区間の算出
-*******************************************************************************/
-
-/********** 有限離散分布生成関数 **********/
-start sampling(m,prob,seed);/*prob:各項目を選び出す確率のベクトル(和が1になる)*/
-u=j(1,1,0);
-call randseed(seed);
-call randgen(u,"uniform");
-dens=j(1,m,0);
-result=1;
-do I=1 to m;
-
-    dens1=prob[,(1:I)];
-    dens2=dens1[,+];
-    if u<=dens2 then do;
-        result=I;
-        goto skip;
-    end;
-    end;
-skip:
-return(result);
-finish sampling;
-/********** モデルからのsampling関数 **********/
-start generate_sample(n,m,rv,samp,seed);
-run tran_m_inv(rv,lambda,gamma,delta);
-call randseed(seed);/* set random number seed */
-mvect=j(1,m,1);/*ベクトル{1,2,...m}を作成*/
-do I=1 to m;
-mvect[i]=I;
-end;
-state=j(n,1,0);
-state[1]=sampling(m,delta,seed);
-do I=2 to n;
-s=state[(I-1),];
-t=gamma[s,];
-state[I]=sampling(m,t,seed);
-end;
-samp=j(n,2,0);
-do J=1 to n;
-ss=state[J];
-call randgen(x,'POISSON',lambda[,ss]); 
-samp[J,1]=ss;
-samp[J,2]=x;
-end;
-finish generate_sample;
-
-/********** 正方行列を行毎に分解して横結合してベクトルにするモジュール **********/
-start tran_m(mtx);/*mtx:正方行列*/
-N=nrow(mtx);
-
-mvect=j(1,N*N,1);
-do y_=1 to N;
-    do z_=1 to N;
-    mvect[((y_-1)*N)+z_]=mtx[y_,z_];
-    end;
-end;
-return(mvect);
-finish tran_m;
-
-/********** bootstrap本体 **********/
-start bootstrap(bootiter,rv) global(x,pv,opt,cons);
-    do k_=1 to bootiter;
-        seed=112345-k_;
-
-        run generate_sample(107,3,rv,x,seed);
-        CALL NLPDD(rc, result, "mllk", rv, opt,cons);
-
-        result_dm=result_dm//result;
-    end;
-
-    names={'lambda1' 'lambda2' 'lambda3' 'gamma11' 'gamma12' 'gamma13' 'gamma21' 'gamma22' 'gamma23' 'gamma31' 'gamma32' 'gamma33' 'delta1' 'delta2' 'random_sigma'};
-
-    create boot_dm from result_dm[colname=names];
-    append from result_dm;
-    close result_dm; 
-finish bootstrap;
 
 reset storage=ModDir.Mod_DM;  /* set location for storage */
 store module=_all_;* log_ lalphabeta EM viterbi sampling generate_sample tran_m bootstrap;

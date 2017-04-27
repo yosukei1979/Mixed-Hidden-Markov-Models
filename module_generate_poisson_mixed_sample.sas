@@ -7,7 +7,7 @@
 *******************************************************************************/
 options ls=132 ps=8000 nonumber nodate noxwait noxsync nocenter nosource;
 /********** モジュールのstore先 **********/
-libname ModDir ".\MODULE";
+libname ModDir "C:\Users\biostat\Documents\MHMM＿Paper\Program\module";
 /********** 2-state **********/
 proc iml;
 /********** 有限離散分布生成関数 **********/
@@ -46,10 +46,24 @@ mvect=j(1,m,1);/*ベクトル{1,2,...m}を作成*/
         mvect[m2_I]=m2_I;
     end;
 state=j(n,1,0);
-state[1]=sampling(m,delta,seed);
+
+delta1=j(1,2,0);
+delta1[1,1]=1/(1+EXP(-delta[1,1]));
+delta1[1,2]=1-1/(1+EXP(-delta[1,1]));
+
+state[1]=sampling(m,delta1,seed);
+
+gamma1=j(2,2,0);
+gamma1[1,1]=1/1+EXP(-gamma[1,1]);
+gamma1[1,2]=1-(1/1+EXP(-gamma[1,1]));
+gamma1[2,1]=1-(1/1+EXP(-gamma[1,2]));
+gamma1[2,2]=1-(1/1+EXP(-gamma[1,2]));
+
+
+
     do m3_I=2 to n;
         s=state[(m3_I-1),];
-        t=gamma[s,];
+        t=gamma1[s,];
         state[m3_I]=sampling(m,t,seed);
     end;
 result=j(n,6,0);
@@ -80,7 +94,7 @@ start _simulation_data_(  obs/*生成する行数*/
                     ,result/*出力*/
                     ,seed/*シード*/);
 call randseed(seed); 
-_u=randnormal(1,0,_u_sigma);
+_u=randnormal(1,0,exp(_u_sigma*2));
 do m4_j=1 to nrow(X);
     input=X[m4_j,];
     run generate_sample(
@@ -122,17 +136,18 @@ start _simulation_(start_iter,bootiter) global(m,obs,nsbj,lambda0,gamma0,delta0,
                     ,SIGMA0/*ランダム効果*/
                     ,x_all/*出力*/
                     ,seed/*シード*/);
-
-        tgamma0=tran_m(gamma0);
-        pvt=lambda0||tgamma0||delta0||beta0||SIGMA0;
-
+        *tgamma0=tran_m(gamma0);
+*        pvt=lambda0||tgamma0||delta0||beta0||SIGMA0;
+        pvt=lambda0||gamma0||delta0||beta0||SIGMA0;
+*        pvt=lambda0||tgamma0||delta0||beta0||SIGMA0;
        CALL NLPNRA(rc,result_, "mllk", pvt, opt,cons);
+/*	   CALL NLPQN(rc,result_, "mllk", pvt, opt);*/
         result_dm=result_dm//result_;
     end;
-/*names={'lambda1' 'lambda2' 'lambda3' 'gamma11' 'gamma12' 'gamma13' 'gamma21' 'gamma22' 'gamma23' 'gamma31' 'gamma32' 'gamma33' 'delta1' 'delta2' 'random_sigma'};*/
-    create data.boot_dm from result_dm;*[colname=names];
+names={'lambda1' 'lambda2' 'gamma11'  'gamma22' 'delta1' 'beta1' 'beta2' 'random_sigma'};
+    create boot_dm from result_dm[colname=names];
     append from result_dm;
-    close data.boot_dm; 
+    close boot_dm; 
 
 finish _simulation_;
 
