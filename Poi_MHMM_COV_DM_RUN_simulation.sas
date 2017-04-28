@@ -12,8 +12,8 @@ options CPUCOUNT=4 THREADS ;
     初期設定
 *******************************************************************************/
 /*directory*/
-libname data "C:\Users\biostat\Documents\MHMM＿Paper\Program\data";
-libname ModDir "C:\Users\biostat\Documents\MHMM＿Paper\Program\module";
+libname data ".\data";
+libname ModDir ".\module";
 %********** 2-state **********;
 
 %Macro sim_MHMM(start,end,output);
@@ -43,7 +43,7 @@ beta0={0.5 0.5};
 l1=1;
 l2=2;
 lambda0=l1||l2;
-gamma0={1.5 1.5};*対角成分のみ指定し、残りは導出;
+gamma0={1.5 0.5};*対角成分のみ指定し、残りは導出;
 delta0={0.5};*一個だけ指定して導出;
 *SIGMA0=0.25;
 SIGMA0=0.5;
@@ -63,10 +63,10 @@ cons={
 run _simulation_(&start.,&end.);
 quit;
 data data.&output;
-	set boot_dm;
+    set boot_dm;
 run;
 %Mend sim_MHMM;
-%sim_MHMM(1,10,boot_dm_1);
+%sim_MHMM(1,3,boot_dm_1);
 %sim_MHMM(101,200,boot_dm_2);
 %sim_MHMM(201,300,boot_dm_3);
 %sim_MHMM(301,400,boot_dm_4);
@@ -170,6 +170,6 @@ run;
 
 
 /*data data.boot_dm;*/
-/*	set data.boot_dm_1-data.boot_dm_10;*/
+/*  set data.boot_dm_1-data.boot_dm_10;*/
 /*run;*/
 /********************************* pgm end! *********************************/

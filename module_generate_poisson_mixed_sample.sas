@@ -7,7 +7,7 @@
 *******************************************************************************/
 options ls=132 ps=8000 nonumber nodate noxwait noxsync nocenter nosource;
 /********** モジュールのstore先 **********/
-libname ModDir "C:\Users\biostat\Documents\MHMM＿Paper\Program\module";
+libname ModDir ".\module";
 /********** 2-state **********/
 proc iml;
 /********** 有限離散分布生成関数 **********/
@@ -48,22 +48,26 @@ mvect=j(1,m,1);/*ベクトル{1,2,...m}を作成*/
 state=j(n,1,0);
 
 delta1=j(1,2,0);
-delta1[1,1]=1/(1+EXP(-delta[1,1]));
-delta1[1,2]=1-1/(1+EXP(-delta[1,1]));
+delta1[1,1]=logistic(delta[1,1]);
+delta1[1,2]=1-delta1[1,1];
 
 state[1]=sampling(m,delta1,seed);
 
 gamma1=j(2,2,0);
-gamma1[1,1]=1/1+EXP(-gamma[1,1]);
-gamma1[1,2]=1-(1/1+EXP(-gamma[1,1]));
-gamma1[2,1]=1-(1/1+EXP(-gamma[1,2]));
-gamma1[2,2]=1-(1/1+EXP(-gamma[1,2]));
-
+/*print gamma;*/
+gamma11=gamma[1,1];
+gamma12=gamma[1,2];
+gamma1[1,1]=logistic(gamma11);
+gamma1[1,2]=1-gamma1[1,1];
+gamma1[2,2]=gamma12;
+gamma1[2,1]=1-gamma1[2,2];
+/*print gamma1;*/
 
 
     do m3_I=2 to n;
         s=state[(m3_I-1),];
         t=gamma1[s,];
+        *if m3_I=2 then print t;
         state[m3_I]=sampling(m,t,seed);
     end;
 result=j(n,6,0);
@@ -141,7 +145,7 @@ start _simulation_(start_iter,bootiter) global(m,obs,nsbj,lambda0,gamma0,delta0,
         pvt=lambda0||gamma0||delta0||beta0||SIGMA0;
 *        pvt=lambda0||tgamma0||delta0||beta0||SIGMA0;
        CALL NLPNRA(rc,result_, "mllk", pvt, opt,cons);
-/*	   CALL NLPQN(rc,result_, "mllk", pvt, opt);*/
+/*     CALL NLPQN(rc,result_, "mllk", pvt, opt);*/
         result_dm=result_dm//result_;
     end;
 names={'lambda1' 'lambda2' 'gamma11'  'gamma22' 'delta1' 'beta1' 'beta2' 'random_sigma'};

@@ -7,7 +7,7 @@
 *******************************************************************************/
 options ls=132 ps=8000 nonumber nodate noxwait noxsync nocenter nosource;
 /********** ÉÇÉWÉÖÅ[ÉãÇÃstoreêÊ **********/
-libname ModDir "C:\Users\biostat\Documents\MHMMÅQPaper\Program\module";
+libname ModDir ".\module";
 
 proc iml;
 
@@ -136,13 +136,14 @@ _flg=0;
         lalpha2=log_(foo)+lscale;
         lalpha=lalpha//lalpha2;
     end;
-    lalpha=t(lalpha);
-    _c=max(lalpha[,n]);
-/*    llk=log_(exp(_c+log_(sum(exp(lalpha[,n]-_c))))) +log_(_R);*/
-    llk=_c+log_(sum(exp(lalpha[,n]-_c)));
-	llk2=exp(llk)*_R;
-    return(llk2);
-	skip:
+    lalpha=t(lalpha[n,]);
+/*    lalpha=lalpha//log_(_R);*/
+    _c=max(lalpha);
+/*    lalpha2=exp(lalpha-_c);*/
+    llk=log_(exp(_c+log_(sum(exp(lalpha-_c)))));
+    llkr=llk*_R;
+    return(llkr);
+    skip:
 finish mllk_s;
 
 start mllk(_pvt) global(pvt,m,c,x,nsbj,obs);
@@ -157,26 +158,26 @@ do _nsbj=1 to nsbj;
 /*    print x;*/
 /*X=x_all[(_nsbj*obs-9):(_nsbj*obs),];*/
     
-    _integ=j(1,41,0);
-	_in2=0;
-    do _in=-2 to 2 by 0.1;
-	    _in2=_in2+1;
-	    _integ[1,_in2]=mllk_S(_in);
+    _integ=j(1,601,0);
+    _in2=0;
+    do _in=-3 to 3 by 0.01;
+        _in2=_in2+1;
+        _integ[1,_in2]=mllk_S(_in);
     end;
-	z=_integ[,+];
-/*	print _integ;*/
-/*	RANG={-1 1};*/
+/*    z=_integ[,+];*/
+/*  print _integ;*/
+/*  RANG={-1 1};*/
 /*call quad(z,"mllk_S",rang);*/
 /*logsum ver*/
-/*	_cz=max(_integ);*/
-/*	_z2=_cz+log_(sum(exp(_integ-_cz)));*/
-/*	z=_z2+log(4)-log(41);*/
+  _cz=max(_integ);
+  _z2=_cz+log_(sum(exp(_integ-_cz)));
+  z=_z2;
 
     RES[1,_nsbj]=z;
 /*    print RES;*/
 end;
 zz=RES[,+];
-const=10*log(4/41);
+const=10*log(6/601);
 lzz=log_(zz)+const;
 /*print zz;*/
 return(lzz);
