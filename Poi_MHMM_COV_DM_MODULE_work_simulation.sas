@@ -140,8 +140,11 @@ _flg=0;
 /*    lalpha=lalpha//log_(_R);*/
     _c=max(lalpha);
 /*    lalpha2=exp(lalpha-_c);*/
-    llk=log_(exp(_c+log_(sum(exp(lalpha-_c)))));
-    llkr=llk*_R;
+    llk=_c+log_(sum(exp(lalpha-_c)));
+	log_R=log_(_R);
+	_cllkr=max(llk,log_R);
+	_cllkr_v=llk//log_R;
+    llkr=_cllkr+log_(sum(exp(_cllkr_v-_cllkr)));
     return(llkr);
     skip:
 finish mllk_s;
@@ -158,9 +161,9 @@ do _nsbj=1 to nsbj;
 /*    print x;*/
 /*X=x_all[(_nsbj*obs-9):(_nsbj*obs),];*/
     
-    _integ=j(1,601,0);
+    _integ=j(1,61,0);
     _in2=0;
-    do _in=-3 to 3 by 0.01;
+    do _in=-3 to 3 by 0.1;
         _in2=_in2+1;
         _integ[1,_in2]=mllk_S(_in);
     end;
@@ -176,10 +179,11 @@ do _nsbj=1 to nsbj;
     RES[1,_nsbj]=z;
 /*    print RES;*/
 end;
+/*print RES;*/
 zz=RES[,+];
-const=10*log(6/601);
-lzz=log_(zz)+const;
-/*print zz;*/
+const=10*log(6/61);
+lzz=zz+const;
+/*print lzz;*/
 return(lzz);
 finish mllk;
 
