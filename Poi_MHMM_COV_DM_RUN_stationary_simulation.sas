@@ -13,7 +13,7 @@ options CPUCOUNT=4 THREADS ;
 *******************************************************************************/
 /*directory*/
 libname data ".\data";
-libname ModDir ".\module";
+libname ModDir ".\module_stationary";
 %********** 2-state **********;
 
 %Macro sim_MHMM(start,end,output);
@@ -38,17 +38,15 @@ nsbj=nrow(COV_X);
 m=2;
 c=2;
 obs=10;
-beta0={0.5 0.5};
+beta0={1 0.5};
 
 l1=1;
 l2=2;
 lambda0=l1||l2;
 gamma0={1.5 0.5};*対角成分のみ指定し、残りは導出;
-delta0={0.5};*一個だけ指定して導出;
-*SIGMA0=0.25;
 SIGMA0=0.5;
 
-opt={1,5,1,1,2};
+opt={1,5,1,2,1};
 *cons={
 . . 0 0 0 0 0 0 . . 0.001 . .,
 . . 1 1 1 1 1 1 . . .     . .,
@@ -57,8 +55,8 @@ opt={1,5,1,1,2};
 . . . . . . 1 1 . . .     0 1
 };
 cons={
-. . . . . . . -10 ,
-. . . . . . . .
+. . . . . . -10 ,
+. . . . . . .
 };
 run _simulation_(&start.,&end.);
 quit;
@@ -66,16 +64,16 @@ data data.&output;
     set boot_dm;
 run;
 %Mend sim_MHMM;
-%sim_MHMM(1,100,boot_dm_1);
-%sim_MHMM(101,200,boot_dm_2);
-%sim_MHMM(201,300,boot_dm_3);
-%sim_MHMM(301,400,boot_dm_4);
-%sim_MHMM(401,500,boot_dm_5);
-%sim_MHMM(501,600,boot_dm_6);
-%sim_MHMM(601,700,boot_dm_7);
-%sim_MHMM(701,800,boot_dm_8);
-%sim_MHMM(801,900,boot_dm_9);
-%sim_MHMM(901,1000,boot_dm_10);
+%sim_MHMM(1,1,boot_dm_S_1);
+/*%sim_MHMM(101,200,boot_dm_2);*/
+/*%sim_MHMM(201,300,boot_dm_3);*/
+/*%sim_MHMM(301,400,boot_dm_4);*/
+/*%sim_MHMM(401,500,boot_dm_5);*/
+/*%sim_MHMM(501,600,boot_dm_6);*/
+/*%sim_MHMM(601,700,boot_dm_7);*/
+/*%sim_MHMM(701,800,boot_dm_8);*/
+/*%sim_MHMM(801,900,boot_dm_9);*/
+/*%sim_MHMM(901,1000,boot_dm_10);*/
 /**/
 /*%sim_MHMM(1001,1100,boot_dm_11);*/
 /*%sim_MHMM(1101,1200,boot_dm_12);*/

@@ -7,7 +7,7 @@
 *******************************************************************************/
 options ls=132 ps=8000 nonumber nodate noxwait noxsync nocenter nosource;
 /********** モジュールのstore先 **********/
-libname ModDir ".\module";
+libname ModDir ".\module_stationary";
 
 proc iml;
 
@@ -70,17 +70,8 @@ gamma=j(m,m,0);
 delta=j(1,m,0);
 beta=j(1,c,0);
 sigma=j(1,1,0);
-
-*一般化するの大変なのでm=2の場合に固定、ベタ書き対応;
 do i=1 to m;
-/*    do j=1 to m;*/
-/*    */
-/*    if j=1 then*/
-/*    gamma[i,j]=rv[,(m*i+j**1)];*/
-/*    else gamma[i,j]=rv[,(m*i+j**1)];*/
-/*    end;*/
     lambda[,i]=rv[,i];
-    delta[,i]=rv[,(m*(m+1)+i)];
 end;
 
 gamma11=logistic(rv[,3]);
@@ -92,15 +83,17 @@ gamma[1,1]=gamma11;
 gamma[1,2]=gamma12;
 gamma[2,1]=gamma21;
 gamma[2,2]=gamma22;
-delta1=logistic(rv[,5]);
-delta2=1-delta1;
-delta[,1]=delta1;
-delta[,2]=delta2;
-do _k=6 to 7;
-beta[,_k-5]=rv[,_k];
+
+_I_DELTA=I(2);
+___d=_I_DELTA-GAMMA+1;
+___e={1,1};
+___x=solve(___d,___e);
+delta=___x`;
+do _k=5 to 6;
+beta[,_k-4]=rv[,_k];
 end;
 
-sigma[1,1]=rv[,8];
+sigma[1,1]=rv[,7];
 
 finish tran_m_inv;
 
@@ -141,7 +134,10 @@ _flg=0;
 finish mllk_s;
 
 start mllk(pvt) global(m,c,x,nsbj,obs);
-run tran_m_inv(pvt,lambda,gamma,delta,beta,sigma);
+run tran_m_inv(pvt,lambda,gamma,beta,delta,sigma);
+delta=j(1,2,0);
+
+
 RES=j(1,nsbj,0);
 do _nsbj=1 to nsbj;
     use anal_data;
