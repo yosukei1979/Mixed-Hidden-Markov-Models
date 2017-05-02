@@ -85,14 +85,13 @@ gamma[2,1]=gamma21;
 gamma[2,2]=gamma22;
 
 _I_DELTA=I(2);
-___d=_I_DELTA-GAMMA+1;
+___d=(_I_DELTA-GAMMA+1)`;
 ___e={1,1};
 ___x=solve(___d,___e);
 delta=___x`;
-do _k=5 to 6;
-beta[,_k-4]=rv[,_k];
-end;
 
+beta[,1]=rv[,5];
+beta[,2]=rv[,6];
 sigma[1,1]=rv[,7];
 
 finish tran_m_inv;
@@ -134,16 +133,13 @@ _flg=0;
 finish mllk_s;
 
 start mllk(pvt) global(m,c,x,nsbj,obs);
-run tran_m_inv(pvt,lambda,gamma,beta,delta,sigma);
-delta=j(1,2,0);
-
-
+run tran_m_inv(pvt,lambda,gamma,delta,beta,sigma);
 RES=j(1,nsbj,0);
 do _nsbj=1 to nsbj;
     use anal_data;
     read all into x var{COV1 COV2 count} where(SUBJECT=_nsbj);
     close anal_data; 
-   
+*print   lambda,gamma,beta,delta,sigma;
     _integ=j(1,61,0);
     _in2=0;
     do _in=-3 to 3 by 0.1;

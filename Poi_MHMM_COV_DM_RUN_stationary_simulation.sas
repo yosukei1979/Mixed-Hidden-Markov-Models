@@ -44,9 +44,9 @@ l1=1;
 l2=2;
 lambda0=l1||l2;
 gamma0={1.5 0.5};*対角成分のみ指定し、残りは導出;
-SIGMA0=0.5;
+SIGMA0=0;
 
-opt={1,5,1,2,1};
+opt={1,5,1,1,1};
 *cons={
 . . 0 0 0 0 0 0 . . 0.001 . .,
 . . 1 1 1 1 1 1 . . .     . .,
@@ -64,17 +64,17 @@ data data.&output;
     set boot_dm;
 run;
 %Mend sim_MHMM;
-%sim_MHMM(1,1,boot_dm_S_1);
-/*%sim_MHMM(101,200,boot_dm_2);*/
-/*%sim_MHMM(201,300,boot_dm_3);*/
-/*%sim_MHMM(301,400,boot_dm_4);*/
-/*%sim_MHMM(401,500,boot_dm_5);*/
-/*%sim_MHMM(501,600,boot_dm_6);*/
-/*%sim_MHMM(601,700,boot_dm_7);*/
-/*%sim_MHMM(701,800,boot_dm_8);*/
-/*%sim_MHMM(801,900,boot_dm_9);*/
-/*%sim_MHMM(901,1000,boot_dm_10);*/
-/**/
+%sim_MHMM(1,100,boot_dm_S_1);
+%sim_MHMM(101,200,boot_dm_S_2);
+%sim_MHMM(201,300,boot_dm_S_3);
+%sim_MHMM(301,400,boot_dm_S_4);
+%sim_MHMM(401,500,boot_dm_S_5);
+%sim_MHMM(501,600,boot_dm_S_6);
+%sim_MHMM(601,700,boot_dm_S_7);
+%sim_MHMM(701,800,boot_dm_S_8);
+%sim_MHMM(801,900,boot_dm_S_9);
+%sim_MHMM(901,1000,boot_dm_S_10);
+
 /*%sim_MHMM(1001,1100,boot_dm_11);*/
 /*%sim_MHMM(1101,1200,boot_dm_12);*/
 /*%sim_MHMM(1201,1300,boot_dm_13);*/

@@ -45,17 +45,6 @@ mvect=j(1,m,1);/*ベクトル{1,2,...m}を作成*/
     do m2_I=1 to m;
         mvect[m2_I]=m2_I;
     end;
-state=j(n,1,0);
-_I_DELTA=I(2);
-___d=GAMMA-_I_DELTA+1;
-___e={1,1};
-___x=solve(___d,___e);
-delta=___x`;
-/*delta1=j(1,2,0);*/
-/*delta1[1,1]=logistic(delta[1,1]);*/
-/*delta1[1,2]=1-delta1[1,1];*/
-
-state[1]=sampling(m,delta,seed);
 
 gamma1=j(2,2,0);
 /*print gamma;*/
@@ -67,6 +56,16 @@ gamma1[2,2]=gamma12;
 gamma1[2,1]=1-gamma1[2,2];
 /*print gamma1;*/
 
+state=j(n,1,0);
+_I_DELTA=I(2);
+___d=(_I_DELTA-GAMMA1+1)`;
+___e={1,1};
+___x=solve(___d,___e);
+delta=___x`;
+
+state=j(n,1,0);
+
+state[1]=sampling(m,delta,seed);
 
     do m3_I=2 to n;
         s=state[(m3_I-1),];
@@ -74,7 +73,7 @@ gamma1[2,1]=1-gamma1[2,2];
         *if m3_I=2 then print t;
         state[m3_I]=sampling(m,t,seed);
     end;
-result=j(n,6,0);
+result=j(n,7,0);
 h_mu=input[,2:ncol(input)];
 *print h_mu;
     do M2_J=1 to n;
@@ -89,8 +88,9 @@ h_mu=input[,2:ncol(input)];
         result[M2_J,4]=M2_J;
         result[M2_J,5]=ss;
         result[M2_J,6]=x;
+        result[M2_J,7]=u;
     end;
-
+/*print lambda,gamma1,delta,beta,u;*/
 finish generate_sample;
 
 start _simulation_data_(  obs/*生成する行数*/
@@ -101,9 +101,10 @@ start _simulation_data_(  obs/*生成する行数*/
                     ,_u_sigma/*ランダム効果の分散*/
                     ,result/*出力*/
                     ,seed/*シード*/);
-call randseed(seed); 
-_u=randnormal(1,0,exp(_u_sigma*2));
 do m4_j=1 to nrow(X);
+
+call randseed(seed+m4_j); 
+_u=randnormal(1,0,exp(_u_sigma*2));
     input=X[m4_j,];
     run generate_sample(
                          obs/*生成する行数*/
@@ -115,7 +116,7 @@ do m4_j=1 to nrow(X);
                         ,_result/*出力*/
                         ,seed/*シード*/);
     result=result//_result;
-names={'Subject' 'COV1' 'COV2' 'Visit' 'state' 'COUNT'};
+names={'Subject' 'COV1' 'COV2' 'Visit' 'state' 'COUNT' 'random_effect'};
 
 create anal_data from result[colname=names];
 append from result;
@@ -150,9 +151,10 @@ start _simulation_(start_iter,bootiter) global(m,obs,nsbj,lambda0,gamma0,beta0,S
 *        pvt=lambda0||tgamma0||delta0||beta0||SIGMA0;
        CALL NLPNRA(rc,result_, "mllk", pvt, opt,cons);
 /*     CALL NLPQN(rc,result_, "mllk", pvt, opt);*/
+	   result_=result_||rc;
         result_dm=result_dm//result_;
     end;
-names={'lambda1' 'lambda2' 'gamma11'  'gamma22' 'beta1' 'beta2' 'random_sigma'};
+names={'lambda1' 'lambda2' 'gamma11'  'gamma22' 'beta1' 'beta2' 'random_sigma' 'return_code'};
     create boot_dm from result_dm[colname=names];
     append from result_dm;
     close boot_dm; 

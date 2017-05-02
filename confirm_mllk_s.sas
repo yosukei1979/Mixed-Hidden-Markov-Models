@@ -1,5 +1,5 @@
 libname data ".\data";
-libname ModDir ".\module";
+libname ModDir ".\module_stationary";
 proc iml;
 reset storage=ModDir.Mod_DM;  /* set location for storage */
 load module=_all_;
@@ -21,13 +21,12 @@ nsbj=nrow(COV_X);
 m=2;
 c=2;
 obs=10;
-beta0={0.5 0.5};
+beta0={1 1.5};
 
-l1=1;
-l2=2;
+l1=-1;
+l2=1;
 lambda0=l1||l2;
 gamma0={1.5 0.5};*対角成分のみ指定し、残りは導出;
-delta0={0.5};*一個だけ指定して導出;
 *SIGMA0=0.25;
 SIGMA0=2;
 
@@ -43,25 +42,16 @@ cons={
 . . . . . . . -10 ,
 . . . . . . . .
 };        
-seed=1;
-run _simulation_data_(obs/*生成する行数*/
-                    ,m/*状態数*/
-                    ,COV_X/*入力行列 1行N列、1:1=SUBJIID 2:N=共変量の値*/
-                    ,lambda0,gamma0,delta0/*HMMのパラメータ*/
-                    ,beta0/*共変量の係数*/
-                    ,SIGMA0/*ランダム効果*/
-                    ,x_all/*出力*/
-                    ,seed/*シード*/);
 
+        pvt=lambda0||gamma0||beta0||SIGMA0;
 _nsbj=1;
     use anal_data;
     read all into x var{COV1 COV2 count} where(SUBJECT=_nsbj);
-    close anal_data;
-
-        pvt=lambda0||gamma0||delta0||beta0||SIGMA0;
-        _pvt=lambda0||gamma0||delta0||beta0||SIGMA0;
-a=MLLK_S(2);
+    close anal_data; 
+   
+run tran_m_inv(pvt,lambda,gamma,beta,delta,sigma);
+a=MLLK_S(2,lambda,gamma,delta,beta);
 print a;
-b=mllk(_pvt);
+b=mllk(pvt);
 print b;
 quit;
