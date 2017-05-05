@@ -7,7 +7,7 @@
 *******************************************************************************/
 options ls=132 ps=8000 nonumber nodate noxwait noxsync nocenter nosource;
 /********** モジュールのstore先 **********/
-libname ModDir ".\module_stationary";
+libname ModDir ".\module_timepoint";
 /********** 2-state **********/
 proc iml;
 /********** 有限離散分布生成関数 **********/
